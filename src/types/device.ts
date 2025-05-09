@@ -1,0 +1,48 @@
+export interface Device {
+  id: string
+  name: string
+  ip: string
+  status: 'online' | 'offline' | 'warning'
+  model: string
+  firmwareVersion: string
+  group: 'Production' | 'Testing' | 'Development'
+  uptime: string
+  cpu: number
+  memory: number
+  disk: number
+  network: {
+    in: number
+    out: number
+  }
+  tasks: {
+    name: string
+    cpu: number
+    memory: number
+    status: 'running' | 'paused' | 'stopped'
+  }[]
+  lastSeen: string
+}
+
+export interface DeviceDetail {
+  id: string
+  name: string
+  ip: string
+  status: 'online' | 'offline' | 'warning'
+  model: string
+  firmwareVersion: string
+  group: string
+  uptime: string
+  cpu: number
+  memory: number
+  network: {
+    in: number
+    out: number
+  }
+  tasks: {
+    name: string
+    cpu: number
+    memory: number
+    status: 'running' | 'paused' | 'stopped'
+  }[]
+  lastSeen: string
+} 
