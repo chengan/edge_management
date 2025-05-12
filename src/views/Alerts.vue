@@ -51,7 +51,7 @@ const filteredAlerts = computed(() => {
   })
 })
 
-const acknowledgeAlert = async (alertId: string) => {
+const acknowledgeAlert = async (alertId: number) => {
   try {
     await api.acknowledgeAlert(alertId)
     const alertIndex = alerts.value.findIndex(a => a.id === alertId)

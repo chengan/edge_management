@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import api from '../api'
 import type { Device } from '../types/device'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import CryptoJS from 'crypto-js'
 
 const router = useRouter()
 const loading = ref(true)
@@ -61,7 +62,7 @@ const filteredDevices = computed(() => {
   })
 })
 
-const viewDeviceDetails = (id: string) => {
+const viewDeviceDetails = (id: number) => {
   router.push(`/devices/${id}`)
 }
 
@@ -255,6 +256,9 @@ const handleAddDeviceSubmit = async () => {
   try {
     await addDeviceFormRef.value.validate()
     
+    //密码加密
+    const encryptedPassword = CryptoJS.MD5(addDeviceForm.value.password).toString()
+    addDeviceForm.value.password = encryptedPassword
     // 调用API添加设备
     await api.addDevice({
       ...addDeviceForm.value,

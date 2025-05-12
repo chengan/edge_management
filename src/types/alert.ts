@@ -1,7 +1,7 @@
 export interface Alert {
-  id: string
+  id: number
   timestamp: string
-  deviceId: string
+  deviceId: number
   deviceName: string
   type: 'cpu' | 'memory' | 'disk' | 'temperature' | 'offline' | 'network'
   level: 'critical' | 'error' | 'warning' | 'info'

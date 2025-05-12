@@ -20,7 +20,7 @@ const passwordForm = ref({
 })
 
 const userForm = ref<UserProfile>({
-  id: '',
+  id: 0,
   username: '',
   email: '',
   role: ''

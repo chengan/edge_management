@@ -23,7 +23,7 @@ export interface LoginResult {
 
 // 用户信息接口
 export interface UserProfile {
-  id: string
+  id: number
   username: string
   email: string
   role: string

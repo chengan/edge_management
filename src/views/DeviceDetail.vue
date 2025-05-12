@@ -10,7 +10,7 @@ import type { WebSocketMessage } from '../utils/websocket/types'
 
 const route = useRoute()
 const router = useRouter()
-const deviceId = route.params.id as string
+const deviceId = Number(route.params.id)
 const device = ref<DeviceDetail | null>(null)
 const loading = ref(true)
 
@@ -217,7 +217,7 @@ const handleDeviceUpdate = (message: WebSocketMessage) => {
     return;
   }
   
-  // 验证设备ID匹配
+  // 验证设备ID匹配，确保比较的是相同类型
   if (message.data?.id !== deviceId) {
     console.log('跳过不相关设备的消息，期望ID:', deviceId, '收到ID:', message.data?.id);
     return;

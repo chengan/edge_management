@@ -28,7 +28,7 @@ interface LoginParams {
 }
 
 interface UserProfile {
-  id: string
+  id: number
   username: string
   email: string
   role: string
@@ -43,7 +43,7 @@ interface LoginResult {
 ### 设备相关类型
 ```typescript
 interface Device {
-  id: string
+  id: number
   name: string
   ip: string
   status: 'online' | 'offline' | 'warning'
@@ -71,9 +71,9 @@ interface Device {
 ### 告警相关类型
 ```typescript
 interface Alert {
-  id: string
+  id: number
   timestamp: string
-  deviceId: string
+  deviceId: number
   deviceName: string
   type: 'cpu' | 'memory' | 'disk' | 'temperature' | 'offline' | 'network'
   level: 'critical' | 'error' | 'warning' | 'info'
@@ -90,7 +90,7 @@ type NodeType = 'gateway' | 'edge' | 'sensor'
 type DeviceStatus = 'online' | 'offline' | 'warning'
 
 interface Node {
-  id: string
+  id: number
   name: string
   type: NodeType
   status: DeviceStatus
@@ -98,8 +98,8 @@ interface Node {
 }
 
 interface Edge {
-  source: string
-  target: string
+  source: number
+  target: number
   bandwidth: string
 }
 
@@ -138,7 +138,7 @@ interface Topology {
 | code | number | 状态码，200表示成功 |
 | message | string | 响应消息 |
 | data.token | string | JWT认证令牌 |
-| data.user.id | string | 用户ID |
+| data.user.id | number | 用户ID |
 | data.user.username | string | 用户名 |
 | data.user.name | string | 显示名称 |
 | data.user.avatar | string | 头像URL |
@@ -151,7 +151,7 @@ interface Topology {
     "data": {
         "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
         "user": {
-            "id": "1",
+            "id": 1,
             "username": "admin",
             "name": "系统管理员",
             "avatar": "http://i.pravatar.cc/150?img=68",
@@ -189,7 +189,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **响应字段说明**:
 | 字段名 | 类型 | 说明 |
 |-------|------|------|
-| userId | string | 用户ID |
+| userId | number | 用户ID |
 | username | string | 用户名 |
 | email | string | 电子邮箱 |
 | role | string | 用户角色 |
@@ -201,7 +201,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     "code": 200,
     "message": "success",
     "data": {
-        "userId": "1",
+        "userId": 1,
         "username": "admin",
         "email": "admin@example.com",
         "role": "administrator",
@@ -240,7 +240,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     "code": 200,
     "message": "用户信息更新成功",
     "data": {
-        "userId": "1",
+        "userId": 1,
         "username": "admin",
         "email": "new_email@example.com",
         "updateTime": "2024-03-20T10:30:00Z"
@@ -442,7 +442,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 |-------|------|------|
 | total | number | 总记录数 |
 | devices | array | 设备列表 |
-| devices[].id | string | 设备ID |
+| devices[].id | number | 设备ID |
 | devices[].name | string | 设备名称 |
 | devices[].ip | string | IP地址 |
 | devices[].status | string | 设备状态 |
@@ -462,7 +462,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         "total": 471,
         "devices": [
             {
-                "id": "device-001",
+                "id": 1,
                 "name": "Edge-Device-1234",
                 "ip": "192.168.1.100",
                 "status": "online",
@@ -474,7 +474,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                 "lastSeen": "2024-03-20T10:00:00Z"
             },
             {
-                "id": "device-002",
+                "id": 2,
                 "name": "Edge-Device-5678",
                 "ip": "192.168.1.101",
                 "status": "warning",
@@ -501,12 +501,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **路径参数说明**:
 | 参数名 | 类型 | 必填 | 说明 |
 |-------|------|------|------|
-| deviceId | string | 是 | 设备ID |
+| deviceId | number | 是 | 设备ID |
 
 **响应字段说明**:
 | 字段名 | 类型 | 说明 |
 |-------|------|------|
-| id | string | 设备ID |
+| id | number | 设备ID |
 | name | string | 设备名称 |
 | ip | string | IP地址 |
 | status | string | 设备状态 |
@@ -531,7 +531,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     "code": 200,
     "message": "success",
     "data": {
-        "id": "device-001",
+        "id": 1,
         "name": "Edge-Device-1234",
         "ip": "192.168.1.100",
         "status": "online",
@@ -575,7 +575,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **路径参数说明**:
 | 参数名 | 类型 | 必填 | 说明 |
 |-------|------|------|------|
-| deviceId | string | 是 | 设备ID |
+| deviceId | number | 是 | 设备ID |
 
 **响应示例**:
 ```json
@@ -584,7 +584,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     "message": "设备重启指令已发送",
     "data": {
         "taskId": "restart-task-001",
-        "deviceId": "device-001",
+        "deviceId": 1,
         "status": "pending",
         "estimatedTime": 60
     }
@@ -611,29 +611,25 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **路径参数说明**:
 | 参数名 | 类型 | 必填 | 说明 |
 |-------|------|------|------|
-| deviceId | string | 是 | 设备ID |
+| deviceId | number | 是 | 设备ID |
 
 **请求参数说明**:
 | 参数名 | 类型 | 必填 | 说明 |
 |-------|------|------|------|
-| resourceLimit.cpu | number | 否 | CPU使用上限(%) |
-| resourceLimit.memory | number | 否 | 内存使用上限(%) |
-| resourceLimit.storage | number | 否 | 存储使用上限(%) |
-| networkSettings.bandwidth | string | 否 | 带宽限制 |
-| networkSettings.priority | string | 否 | 网络优先级：high、medium、low |
+| name | string | 是 | 设备名称 |
+| cpu | number | 是 | CPU核心数 |
+| memory | number | 是 | 内存大小(GB) |
+| bandwidth | number | 是 | 带宽大小(Mbps) |
+| environment | string | 是 | 运行环境：Production(生产环境)、Testing(测试环境)、Development(开发环境) |
 
 **请求示例**:
 ```json
 {
-    "resourceLimit": {
-        "cpu": 80,
-        "memory": 85,
-        "storage": 90
-    },
-    "networkSettings": {
-        "bandwidth": "100M",
-        "priority": "high"
-    }
+    "name": "边缘设备-1001",
+    "cpu": 8,
+    "memory": 16,
+    "bandwidth": 1000,
+    "environment": "Production"
 }
 ```
 
@@ -642,25 +638,69 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 {
     "code": 200,
     "message": "设备配置已更新",
-    "data": {
-        "deviceId": "device-001",
-        "updateTime": "2024-03-20T10:30:00Z",
-        "config": {
-            "resourceLimit": {
-                "cpu": 80,
-                "memory": 85,
-                "storage": 90
-            },
-            "networkSettings": {
-                "bandwidth": "100M",
-                "priority": "high"
-            }
-        }
+    "data": null
+}
+```
+
+#### 3.5 添加设备
+**接口URL**: `/api/devices/add`  
+**请求方式**: POST  
+**URL示例**: `http://api.example.com/api/devices/add`
+
+**请求头要求**:
+同 1.2 获取用户信息
+
+**请求参数说明**:
+| 参数名 | 类型 | 必填 | 说明 |
+|-------|------|------|------|
+| ip | string | 是 | 设备IP地址 |
+| name | string | 是 | 设备名称 |
+| username | string | 是 | 设备登录用户名 |
+| password | string | 是 | 设备登录密码(MD5加密) |
+| cpu | number | 是 | CPU核心限制数 |
+| memory | number | 是 | 内存限制(GB) |
+| bandwidth | number | 是 | 带宽限制(Mbps) |
+| environment | string | 是 | 运行环境：Production(生产环境)、Testing(测试环境)、Development(开发环境) |
+| config | object | 否 | 设备配置JSON对象 |
+
+**请求示例**:
+```json
+{
+    "ip": "192.168.1.100",
+    "name": "边缘设备-2001",
+    "username": "admin",
+    "password": "e10adc3949ba59abbe56e057f20f883e",
+    "cpu": 4,
+    "memory": 8,
+    "bandwidth": 500,
+    "environment": "Testing",
+    "config": {
+        "autoStart": true,
+        "logLevel": "info",
+        "services": ["data-collection", "monitoring"]
     }
 }
 ```
 
-#### 3.5 设备WebSocket实时数据
+**响应示例**:
+```json
+{
+    "code": 200,
+    "message": "设备添加成功",
+    "data": null
+}
+```
+
+**错误响应示例**:
+```json
+{
+    "code": 400,
+    "message": "设备名称和IP不能为空",
+    "data": null
+}
+```
+
+#### 3.6 设备WebSocket实时数据
 **WebSocket URL**: `ws://host/ws/device/{deviceId}`  
 **消息类型**: 
 1. 客户端请求:
@@ -674,7 +714,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 {
     "type": "DEVICE_UPDATE",
     "data": {
-        "id": "device-001",
+        "id": 1,
         "name": "设备-device-001",
         "status": "online",
         "cpu": 65.5,
@@ -738,7 +778,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     "data": {
         "nodes": [
             {
-                "id": "gateway_001",
+                "id": 1,
                 "name": "主网关",
                 "type": "gateway",
                 "status": "online",
@@ -749,7 +789,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                 }
             },
             {
-                "id": "edge_001",
+                "id": 2,
                 "name": "边缘设备1",
                 "type": "edge",
                 "status": "online",
@@ -760,7 +800,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                 }
             },
             {
-                "id": "sensor_001",
+                "id": 3,
                 "name": "温度传感器1",
                 "type": "sensor",
                 "status": "online",
@@ -773,15 +813,15 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         ],
         "links": [
             {
-                "source": "gateway_001",
-                "target": "edge_001",
+                "source": 1,
+                "target": 2,
                 "type": "network",
                 "bandwidth": "1Gbps",
                 "status": "active"
             },
             {
-                "source": "edge_001",
-                "target": "sensor_001",
+                "source": 2,
+                "target": 3,
                 "type": "data",
                 "bandwidth": "100Mbps",
                 "status": "active"
@@ -883,7 +923,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```json
 {
     "strategy": "cpu_first",
-    "deviceIds": ["device-001", "device-002"]
+    "deviceIds": [1, 2]
 }
 ```
 
@@ -910,7 +950,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         "estimatedTime": 120,
         "devices": [
             {
-                "id": "device-001",
+                "id": 1,
                 "name": "Edge-Device-1234",
                 "currentLoad": {
                     "cpu": 85,
@@ -924,7 +964,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                 }
             },
             {
-                "id": "device-002",
+                "id": 2,
                 "name": "Edge-Device-5678",
                 "currentLoad": {
                     "cpu": 75,
@@ -978,7 +1018,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 | pageSize | number | 否 | 每页数量，默认10 |
 | level | string | 否 | 告警级别：critical、error、warning、info |
 | status | string | 否 | 处理状态：unprocessed、processing、processed |
-| deviceId | string | 否 | 设备ID |
+| deviceId | number | 否 | 设备ID |
 | startTime | string | 否 | 开始时间，ISO 8601格式 |
 | endTime | string | 否 | 结束时间，ISO 8601格式 |
 
@@ -987,9 +1027,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 |-------|------|------|
 | total | number | 总记录数 |
 | alerts | array | 告警列表 |
-| alerts[].id | string | 告警ID |
+| alerts[].id | number | 告警ID |
 | alerts[].timestamp | string | 告警时间 |
-| alerts[].deviceId | string | 设备ID |
+| alerts[].deviceId | number | 设备ID |
 | alerts[].deviceName | string | 设备名称 |
 | alerts[].type | string | 告警类型：cpu、memory、disk、temperature、offline、network |
 | alerts[].level | string | 告警级别：critical、error、warning、info |
@@ -1007,9 +1047,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         "total": 125,
         "alerts": [
             {
-                "id": "alert-001",
+                "id": 1,
                 "timestamp": "2024-03-20T10:00:00Z",
-                "deviceId": "device-001",
+                "deviceId": 1,
                 "deviceName": "Edge-Device-1234",
                 "type": "cpu",
                 "level": "critical",
@@ -1019,9 +1059,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                 "remark": ""
             },
             {
-                "id": "alert-002",
+                "id": 2,
                 "timestamp": "2024-03-20T09:55:00Z",
-                "deviceId": "device-002",
+                "deviceId": 2,
                 "deviceName": "Edge-Device-5678",
                 "type": "memory",
                 "level": "warning",
@@ -1046,7 +1086,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **路径参数说明**:
 | 参数名 | 类型 | 必填 | 说明 |
 |-------|------|------|------|
-| alertId | string | 是 | 告警ID |
+| alertId | number | 是 | 告警ID |
 
 **响应示例**:
 ```json
@@ -1054,11 +1094,11 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     "code": 200,
     "message": "告警确认成功",
     "data": {
-        "id": "alert-001",
+        "id": 1,
         "acknowledged": true,
         "acknowledgedAt": "2024-03-20T10:30:00Z",
         "acknowledgedBy": {
-            "id": "1",
+            "id": 1,
             "username": "admin",
             "name": "系统管理员"
         }
@@ -1077,7 +1117,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **路径参数说明**:
 | 参数名 | 类型 | 必填 | 说明 |
 |-------|------|------|------|
-| alertId | string | 是 | 告警ID |
+| alertId | number | 是 | 告警ID |
 
 **请求参数说明**:
 | 参数名 | 类型 | 必填 | 说明 |
@@ -1085,7 +1125,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 | status | string | 是 | 处理状态：processing(处理中)、processed(已处理) |
 | remark | string | 是 | 处理备注 |
 | solution | string | 否 | 解决方案 |
-| relatedTaskId | string | 否 | 关联的任务ID |
+| relatedTaskId | number | 否 | 关联的任务ID |
 
 **请求示例**:
 ```json
@@ -1093,7 +1133,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     "status": "processed",
     "remark": "已完成CPU资源优化",
     "solution": "通过资源调度降低CPU使用率",
-    "relatedTaskId": "optimize-task-001"
+    "relatedTaskId": 1
 }
 ```
 
@@ -1103,16 +1143,16 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     "code": 200,
     "message": "告警处理成功",
     "data": {
-        "id": "alert-001",
+        "id": 1,
         "status": "processed",
         "processedAt": "2024-03-20T11:00:00Z",
         "processedBy": {
-            "id": "1",
+            "id": 1,
             "username": "admin",
             "name": "系统管理员"
         },
         "solution": "通过资源调度降低CPU使用率",
-        "relatedTaskId": "optimize-task-001"
+        "relatedTaskId": 1
     }
 }
 ```
@@ -1206,8 +1246,8 @@ ws://api.example.com/ws/dashboard?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 {
     "type": "DEVICE_UPDATE",
     "data": {
-        "id": "device-001",
-        "name": "Edge-Device-1234",
+        "id": 1,
+        "name": "设备-device-001",
         "status": "online",
         "cpu": 65.5,
         "memory": 75.2,

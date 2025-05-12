@@ -1,5 +1,5 @@
 export interface Device {
-  id: string
+  id: number
   name: string
   ip: string
   status: 'online' | 'offline' | 'warning'
@@ -26,7 +26,7 @@ export interface Device {
 }
 
 export interface DeviceDetail {
-  id: string
+  id: number
   name: string
   ip: string
   status: 'online' | 'offline' | 'warning'

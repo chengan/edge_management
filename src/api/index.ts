@@ -39,7 +39,7 @@ const api = {
   },
 
   // 设备详情
-  getDeviceDetail(id: string) {
+  getDeviceDetail(id: number) {
     return service.get<any, DeviceDetail>(`${ApiPath.DEVICES}/${id}`)
   },
 
@@ -69,25 +69,25 @@ const api = {
   },
 
   // 确认告警
-  acknowledgeAlert(alertId: string): Promise<void> {
+  acknowledgeAlert(alertId: number): Promise<void> {
     return service.put<any, void>(`${ApiPath.ALERTS}/${alertId}/acknowledge`)
   },
 
   // 处理告警
-  processAlert(alertId: string, data: { status: 'processing' | 'processed', remark?: string }): Promise<void> {
-    const url = ApiPath.ALERT_PROCESS.replace(':id', alertId)
+  processAlert(alertId: number, data: { status: 'processing' | 'processed', remark?: string }): Promise<void> {
+    const url = ApiPath.ALERT_PROCESS.replace(':id', alertId.toString())
     return service.put<any, void>(url, data)
   },
 
   // 重启设备
-  restartDevice(deviceId: string) {
-    const url = ApiPath.DEVICE_RESTART.replace(':id', deviceId)
+  restartDevice(deviceId: number) {
+    const url = ApiPath.DEVICE_RESTART.replace(':id', deviceId.toString())
     return service.post<any, void>(url)
   },
 
   // 更新设备配置
-  updateDeviceConfig(deviceId: string, config: any) {
-    const url = ApiPath.DEVICE_CONFIG.replace(':id', deviceId)
+  updateDeviceConfig(deviceId: number, config: any) {
+    const url = ApiPath.DEVICE_CONFIG.replace(':id', deviceId.toString())
     return service.post<any, void>(url, config)
   },
 

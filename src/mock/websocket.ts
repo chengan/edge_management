@@ -74,7 +74,7 @@ export class MockWebSocketServer {
     return this.generateDeviceStatus();
   }
 
-  private generateDeviceData(deviceId: string): any {
+  private generateDeviceData(deviceId: number): any {
     // 基础设备数据
     return {
       id: deviceId,
@@ -171,7 +171,7 @@ export class MockWebSocketServer {
               // 发送设备详情更新
               this.broadcastMessage({
                 type: 'DEVICE_UPDATE',
-                data: this.generateDeviceData(this.deviceId)
+                data: this.generateDeviceData(Number(this.deviceId))
               });
             }
           }, 5000)
@@ -223,7 +223,7 @@ export class MockWebSocketServer {
 
                 case 'GET_DEVICE_INFO':
                   if (this.serverType === 'device' && this.deviceId) {
-                    const deviceData = this.generateDeviceData(this.deviceId);
+                    const deviceData = this.generateDeviceData(Number(this.deviceId));
                     socket.send(JSON.stringify({
                       type: 'DEVICE_STATUS',
                       data: deviceData

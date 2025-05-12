@@ -92,7 +92,7 @@ Mock.mock('/api/devices', 'get', () => {
   const devices = []
   for (let i = 0; i < 20; i++) {
     devices.push({
-      id: Mock.Random.guid(),
+      id: Mock.Random.integer(1000, 9999),
       name: `Edge-Device-${Mock.Random.integer(1000, 9999)}`,
       ip: Mock.Random.ip(),
       status: Mock.Random.pick(['online', 'offline', 'warning']),
@@ -117,7 +117,7 @@ Mock.mock(new RegExp('/api/devices/.*'), 'get', (options: any) => {
     code: 200,
     data: {
       id,
-      name: `Edge-Device-${Mock.Random.integer(1000, 9999)}`,
+      name: `设备-${Mock.Random.integer(1000, 9999)}`,
       ip: Mock.Random.ip(),
       status: Mock.Random.pick(['online', 'offline', 'warning']),
       cpu: Mock.Random.float(0, 100, 2, 2),
@@ -193,9 +193,9 @@ Mock.mock('/api/alerts', 'get', () => {
   const alerts = []
   for (let i = 0; i < Mock.Random.integer(5, 15); i++) {
     alerts.push({
-      id: Mock.Random.guid(),
-      deviceId: `device-${Mock.Random.integer(0, 14)}`,
-      deviceName: `Edge-Device-${Mock.Random.integer(1000, 9999)}`,
+      id: Mock.Random.integer(1000, 9999),
+      deviceId: Mock.Random.integer(1000, 9999),
+      deviceName: `设备-${Mock.Random.integer(1000, 9999)}`,
       type: Mock.Random.pick(['cpu', 'memory', 'disk', 'temperature', 'offline', 'network']),
       level: Mock.Random.pick(['info', 'warning', 'error', 'critical']),
       message: Mock.Random.sentence(5, 15),

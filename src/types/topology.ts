@@ -6,7 +6,7 @@ export type DeviceStatus = 'online' | 'offline' | 'warning'
 
 // 节点
 export interface Node {
-  id: string
+  id: number
   name: string
   type: NodeType
   status: DeviceStatus
@@ -15,8 +15,8 @@ export interface Node {
 
 // 连接
 export interface Edge {
-  source: string
-  target: string
+  source: number
+  target: number
   bandwidth: string
 }
 
