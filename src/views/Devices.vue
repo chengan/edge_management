@@ -114,33 +114,161 @@ const currentDevice = ref<Device | null>(null)
 const configForm = ref({
   name: '',
   group: '',
-  // 可以根据实际需求添加更多配置项
+  cpu: 0,
+  memory: 0,
+  bandwidth: 0,
+  environment: ''
 })
+
+const configRules = {
+  name: [
+    { required: true, message: '请输入设备名称', trigger: 'blur' }
+  ],
+  cpu: [
+    { required: true, type: 'number', min: 1, message: '请输入有效的CPU核心数', trigger: 'blur' }
+  ],
+  memory: [
+    { required: true, type: 'number', min: 1, message: '请输入有效的内存大小', trigger: 'blur' }
+  ],
+  bandwidth: [
+    { required: true, type: 'number', min: 1, message: '请输入有效的带宽大小', trigger: 'blur' }
+  ],
+  environment: [
+    { required: true, message: '请选择运行环境', trigger: 'change' }
+  ]
+}
+
+const configFormRef = ref()
+
+const handleConfigSubmit = async () => {
+  if (!currentDevice.value || !configFormRef.value) return
+  
+  try {
+    // 表单验证
+    await configFormRef.value.validate()
+    
+    // 确保数值类型正确
+    const config = {
+      ...configForm.value,
+      cpu: Number(configForm.value.cpu),
+      memory: Number(configForm.value.memory),
+      bandwidth: Number(configForm.value.bandwidth)
+    }
+    
+    await api.updateDeviceConfig(currentDevice.value.id, config)
+    ElMessage.success('配置已更新')
+    configDialogVisible.value = false
+    await fetchDevices()
+  } catch (error: any) {
+    if (error.message) {
+      console.error('配置更新失败:', error)
+      ElMessage.error(`配置更新失败: ${error.message}`)
+    }
+  }
+}
 
 // 打开配置弹窗
 const openConfigDialog = (device: Device, event: Event) => {
   event.stopPropagation()
   currentDevice.value = device
   configForm.value = {
-    name: device.name,
-    group: device.group
+    name: device.name || '',
+    group: device.group || '',
+    cpu: Number(device.cpu) || 0,
+    memory: Number(device.memory) || 0,
+    bandwidth: Number(device.bandwidth) || 0,
+    environment: device.environment || ''
   }
   configDialogVisible.value = true
 }
 
-// 提交配置更新
-const handleConfigSubmit = async () => {
-  if (!currentDevice.value) return
+// 新增设备相关
+const addDeviceDialogVisible = ref(false)
+const addDeviceFormRef = ref()
+const addDeviceForm = ref({
+  ip: '',
+  name: '',
+  username: '',
+  password: '',
+  cpu: 1,
+  memory: 1,
+  bandwidth: 100,
+  environment: '',
+  config: '{}'
+})
+
+// 表单验证规则
+const addDeviceRules = {
+  ip: [
+    { required: true, message: '请输入服务器IP', trigger: 'blur' },
+    { pattern: /^(\d{1,3}\.){3}\d{1,3}$/, message: '请输入正确的IP地址', trigger: 'blur' }
+  ],
+  name: [
+    { required: true, message: '请输入设备名称', trigger: 'blur' }
+  ],
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' }
+  ],
+  environment: [
+    { required: true, message: '请选择运行环境', trigger: 'change' }
+  ],
+  config: [
+    { 
+      validator: (rule: any, value: string) => {
+        try {
+          if (value) {
+            JSON.parse(value)
+          }
+          return Promise.resolve()
+        } catch (error) {
+          return Promise.reject('请输入有效的JSON格式')
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
+
+// 打开新增设备弹窗
+const openAddDeviceDialog = () => {
+  addDeviceDialogVisible.value = true
+  addDeviceForm.value = {
+    ip: '',
+    name: '',
+    username: '',
+    password: '',
+    cpu: 1,
+    memory: 1,
+    bandwidth: 100,
+    environment: '',
+    config: '{}'
+  }
+}
+
+// 提交新增设备
+const handleAddDeviceSubmit = async () => {
+  if (!addDeviceFormRef.value) return
   
   try {
-    await api.updateDeviceConfig(currentDevice.value.id, configForm.value)
-    ElMessage.success('配置已更新')
-    configDialogVisible.value = false
+    await addDeviceFormRef.value.validate()
+    
+    // 调用API添加设备
+    await api.addDevice({
+      ...addDeviceForm.value,
+      config: JSON.parse(addDeviceForm.value.config)
+    })
+    
+    ElMessage.success('设备添加成功')
+    addDeviceDialogVisible.value = false
+    
     // 刷新设备列表
     await fetchDevices()
   } catch (error) {
-    console.error('配置更新失败:', error)
-    ElMessage.error('配置更新失败')
+    console.error('添加设备失败:', error)
+    ElMessage.error('添加设备失败')
   }
 }
 </script>
@@ -150,6 +278,9 @@ const handleConfigSubmit = async () => {
     <div class="devices-header">
       <h2>设备管理</h2>
       <div class="actions">
+        <el-button type="primary" @click="openAddDeviceDialog">
+          <i class="el-icon-plus"></i> 新增设备
+        </el-button>
         <el-button type="primary" @click="handleRefresh" :loading="loading">
           <i class="el-icon-refresh"></i> 刷新
         </el-button>
@@ -288,14 +419,53 @@ const handleConfigSubmit = async () => {
     <el-dialog
       v-model="configDialogVisible"
       title="设备配置"
-      width="500px"
+      width="600px"
     >
-      <el-form :model="configForm" label-width="100px">
-        <el-form-item label="设备名称">
-          <el-input v-model="configForm.name" />
+      <el-form 
+        :model="configForm" 
+        :rules="configRules"
+        ref="configFormRef"
+        label-width="120px"
+      >
+        <el-form-item label="设备名称" required>
+          <el-input v-model="configForm.name" placeholder="请输入设备名称"/>
         </el-form-item>
-        <el-form-item label="设备分组">
-          <el-select v-model="configForm.group" style="width: 100%">
+        
+        <el-form-item label="CPU(核)" required>
+          <el-input-number 
+            v-model="configForm.cpu" 
+            :min="1" 
+            :max="128"
+            :precision="0"
+            :step="1"
+            placeholder="请输入CPU核心数"
+          />
+        </el-form-item>
+        
+        <el-form-item label="内存(GB)" required>
+          <el-input-number 
+            v-model="configForm.memory" 
+            :min="1" 
+            :max="1024"
+            :precision="0"
+            :step="1"
+            placeholder="请输入内存大小"
+          />
+        </el-form-item>
+        
+        <el-form-item label="带宽(Mbps)" required>
+          <el-input-number 
+            v-model="configForm.bandwidth" 
+            :min="1" 
+            :max="10000"
+            :precision="0"
+            :step="1"
+            placeholder="请输入带宽大小"
+          />
+        </el-form-item>
+        
+        <el-form-item label="运行环境" required>
+          <el-select v-model="configForm.environment" style="width: 100%">
             <el-option label="生产环境" value="Production" />
             <el-option label="测试环境" value="Testing" />
             <el-option label="开发环境" value="Development" />
@@ -305,9 +475,86 @@ const handleConfigSubmit = async () => {
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="configDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleConfigSubmit">
-            确定
-          </el-button>
+          <el-button type="primary" @click="handleConfigSubmit">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 新增设备弹窗 -->
+    <el-dialog
+      v-model="addDeviceDialogVisible"
+      title="新增设备"
+      width="600px"
+    >
+      <el-form :model="addDeviceForm" :rules="addDeviceRules" ref="addDeviceFormRef" label-width="120px">
+        <el-form-item label="服务器IP" prop="ip" required>
+          <el-input v-model="addDeviceForm.ip" placeholder="请输入服务器IP"/>
+        </el-form-item>
+        
+        <el-form-item label="设备名称" prop="name" required>
+          <el-input v-model="addDeviceForm.name" placeholder="请输入设备名称"/>
+        </el-form-item>
+        
+        <el-form-item label="用户名" prop="username" required>
+          <el-input v-model="addDeviceForm.username" placeholder="请输入设备用户名"/>
+        </el-form-item>
+        
+        <el-form-item label="密码" prop="password" required>
+          <el-input 
+            v-model="addDeviceForm.password" 
+            type="password"
+            placeholder="请输入设备密码"
+          />
+        </el-form-item>
+        
+        <el-form-item label="CPU限制(核)" prop="cpu" required>
+          <el-input-number 
+            v-model="addDeviceForm.cpu" 
+            :min="1" 
+            :max="128"
+            placeholder="请输入CPU核心数"
+          />
+        </el-form-item>
+        
+        <el-form-item label="内存限制(GB)" prop="memory" required>
+          <el-input-number 
+            v-model="addDeviceForm.memory" 
+            :min="1" 
+            :max="1024"
+            placeholder="请输入内存大小"
+          />
+        </el-form-item>
+        
+        <el-form-item label="带宽(Mbps)" prop="bandwidth" required>
+          <el-input-number 
+            v-model="addDeviceForm.bandwidth" 
+            :min="1" 
+            :max="10000"
+            placeholder="请输入带宽大小"
+          />
+        </el-form-item>
+        
+        <el-form-item label="运行环境" prop="environment" required>
+          <el-select v-model="addDeviceForm.environment" style="width: 100%">
+            <el-option label="生产环境" value="Production" />
+            <el-option label="测试环境" value="Testing" />
+            <el-option label="开发环境" value="Development" />
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="设备配置" prop="config">
+          <el-input
+            type="textarea"
+            v-model="addDeviceForm.config"
+            :rows="4"
+            placeholder="请输入JSON格式的设备配置"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="addDeviceDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleAddDeviceSubmit">确定</el-button>
         </span>
       </template>
     </el-dialog>

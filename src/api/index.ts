@@ -1,6 +1,6 @@
 import service from './config'
 import type { LoginParams, LoginResult, DashboardStats, Alert, UserProfile } from '../types/api'
-import type { Device, DeviceDetail } from '../types/device'
+import type { Device, DeviceDetail, AddDeviceRequest } from '../types/device'
 import type { Alert as AlertType } from '../types/alert'
 import type { Topology } from '../types/topology'
 
@@ -17,7 +17,8 @@ const ApiPath = {
   DEVICE_RESTART: '/devices/:id/restart',
   DEVICE_CONFIG: '/devices/:id/config',
   RESOURCE_THRESHOLD: '/resource/threshold',
-  RESOURCE_OPTIMIZE: '/resource/optimize'
+  RESOURCE_OPTIMIZE: '/resource/optimize',
+  DEVICE_ADD: '/devices/add'
 } as const
 
 // API 方法
@@ -84,7 +85,7 @@ const api = {
     return service.post<any, void>(url)
   },
 
-  // 下发设备配置
+  // 更新设备配置
   updateDeviceConfig(deviceId: string, config: any) {
     const url = ApiPath.DEVICE_CONFIG.replace(':id', deviceId)
     return service.post<any, void>(url, config)
@@ -98,6 +99,11 @@ const api = {
   // 触发资源优化
   triggerResourceOptimize() {
     return service.post<any, { message: string }>(ApiPath.RESOURCE_OPTIMIZE)
+  },
+
+  // 添加设备
+  addDevice(params: AddDeviceRequest) {
+    return service.post<any, void>(ApiPath.DEVICE_ADD, params)
   }
 }
 

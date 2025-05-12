@@ -1,5 +1,6 @@
 import Mock from 'mockjs'
 import CryptoJS from 'crypto-js'
+import type { AddDeviceRequest } from '../types/device'
 
 // Set up mock response delay
 Mock.setup({
@@ -331,5 +332,35 @@ Mock.mock('/api/resource/optimize', 'post', () => {
     }
   }
 })
+
+// 添加设备
+Mock.mock('/api/devices/add', 'post', (options: any) => {
+  try {
+    const params = JSON.parse(options.body) as AddDeviceRequest
+    console.log('Mock新增设备:', params)
+    
+    // 参数验证
+    if (!params.name || !params.ip) {
+      return {
+        code: 400,
+        data: null,
+        message: '设备名称和IP不能为空'
+      }
+    }
+
+    return {
+      code: 200,
+      data: null,
+      message: '设备添加成功'
+    }
+  } catch (error) {
+    return {
+      code: 500,
+      data: null,
+      message: '服务器错误'
+    }
+  }
+})
+
 
 export default Mock

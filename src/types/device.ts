@@ -21,6 +21,8 @@ export interface Device {
     status: 'running' | 'paused' | 'stopped'
   }[]
   lastSeen: string
+  bandwidth: number
+  environment: string
 }
 
 export interface DeviceDetail {
@@ -45,4 +47,16 @@ export interface DeviceDetail {
     status: 'running' | 'paused' | 'stopped'
   }[]
   lastSeen: string
+}
+
+export interface AddDeviceRequest {
+  ip: string
+  name: string
+  username: string
+  password: string
+  cpu: number
+  memory: number
+  bandwidth: number
+  environment: string
+  config: Record<string, any>
 } 

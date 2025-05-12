@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import api from '../api'
@@ -38,6 +38,12 @@ onMounted(async () => {
     // 1. 先加载初始数据
     stats.value = await api.getDashboardStats()
     console.log('仪表盘数据:', stats.value)
+    
+    // 先关闭loading，确保DOM已渲染
+    loading.value = false
+    
+    // 等待DOM更新后再初始化图表
+    await nextTick()
     initCharts()
     
     // 2. 确保WS连接前清理之前的连接
@@ -81,7 +87,7 @@ onMounted(async () => {
     
   } catch (error) {
     console.error('加载仪表盘数据失败:', error);
-  } finally {
+    // 确保出错时也关闭loading
     loading.value = false;
   }
 });
