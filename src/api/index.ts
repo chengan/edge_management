@@ -1,6 +1,6 @@
 import service from './config'
 import type { LoginParams, LoginResult, DashboardStats, Alert, UserProfile } from '../types/api'
-import type { Device, DeviceDetail, AddDeviceRequest } from '../types/device'
+import type { Device, DeviceDetail, AddDeviceRequest, DeviceQueryParams, DeviceListResponse } from '../types/device'
 import type { Alert as AlertType } from '../types/alert'
 import type { Topology } from '../types/topology'
 
@@ -34,8 +34,8 @@ const api = {
   },
 
   // 设备列表
-  getDevices() {
-    return service.get<any, Device[]>(ApiPath.DEVICES)
+  getDevices(params: DeviceQueryParams) {
+    return service.post<any, DeviceListResponse>(ApiPath.DEVICES, params)
   },
 
   // 设备详情

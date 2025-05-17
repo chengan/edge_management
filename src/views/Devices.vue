@@ -13,6 +13,13 @@ const searchQuery = ref('')
 const statusFilter = ref<'online' | 'offline' | 'warning' | ''>('')
 const groupFilter = ref<'Production' | 'Testing' | 'Development' | ''>('')
 
+// 添加分页相关数据
+const pagination = ref({
+  page: 1,
+  pageSize: 10,
+  total: 0
+})
+
 onMounted(async () => {
   try {
     await fetchDevices()
@@ -26,8 +33,33 @@ onMounted(async () => {
 const fetchDevices = async () => {
   try {
     loading.value = true
-    const data = await api.getDevices()
-    devices.value = data
+    
+    // 构建查询参数
+    const params = {
+      page: pagination.value.page,
+      pageSize: pagination.value.pageSize,
+      status: statusFilter.value,
+      group: groupFilter.value,
+      keyword: searchQuery.value
+    }
+    
+    console.log('发送查询参数:', params);
+    
+    // 调用API获取设备列表
+    const response = await api.getDevices(params)
+    
+    console.log('获取到的设备列表响应:', response);
+    
+    // 检查响应结构
+    if (!response || !response.list) {
+      console.error('设备列表响应结构异常:', response);
+      ElMessage.error('设备列表数据格式异常');
+      return;
+    }
+    
+    // 更新设备列表和分页信息
+    devices.value = response.list;
+    pagination.value.total = response.total;
   } catch (error) {
     console.error('加载设备列表失败:', error)
     ElMessage.error('加载设备列表失败')
@@ -36,31 +68,28 @@ const fetchDevices = async () => {
   }
 }
 
-const handleRefresh = () => {
+// 页码变化处理
+const handlePageChange = (page: number) => {
+  pagination.value.page = page
   fetchDevices()
 }
 
-const filteredDevices = computed(() => {
-  return devices.value.filter(device => {
-    // 搜索过滤
-    if (searchQuery.value && !device.name.toLowerCase().includes(searchQuery.value.toLowerCase()) && 
-        !device.ip.includes(searchQuery.value)) {
-      return false
-    }
-    
-    // 状态过滤
-    if (statusFilter.value && device.status !== statusFilter.value) {
-      return false
-    }
-    
-    // 分组过滤
-    if (groupFilter.value && device.group !== groupFilter.value) {
-      return false
-    }
-    
-    return true
-  })
-})
+// 每页条数变化处理
+const handleSizeChange = (size: number) => {
+  pagination.value.pageSize = size
+  pagination.value.page = 1
+  fetchDevices()
+}
+
+// 筛选条件变化处理
+const handleFilterChange = () => {
+  pagination.value.page = 1
+  fetchDevices()
+}
+
+const handleRefresh = () => {
+  fetchDevices()
+}
 
 const viewDeviceDetails = (id: number) => {
   router.push(`/devices/${id}`)
@@ -299,6 +328,8 @@ const handleAddDeviceSubmit = async () => {
           prefix-icon="el-icon-search"
           clearable
           class="search-input"
+          @clear="handleFilterChange"
+          @input="handleFilterChange"
         />
         
         <el-select
@@ -306,6 +337,7 @@ const handleAddDeviceSubmit = async () => {
           placeholder="状态"
           clearable
           class="filter-select"
+          @change="handleFilterChange"
         >
           <el-option label="在线" value="online" />
           <el-option label="离线" value="offline" />
@@ -317,6 +349,7 @@ const handleAddDeviceSubmit = async () => {
           placeholder="分组"
           clearable
           class="filter-select"
+          @change="handleFilterChange"
         >
           <el-option label="生产环境" value="Production" />
           <el-option label="测试环境" value="Testing" />
@@ -327,7 +360,7 @@ const handleAddDeviceSubmit = async () => {
     
     <el-card shadow="hover" class="mt-24">
       <el-table
-        :data="filteredDevices"
+        :data="devices"
         border
         style="width: 100%"
         v-loading="loading"
@@ -414,8 +447,17 @@ const handleAddDeviceSubmit = async () => {
       
       <div class="table-footer">
         <div class="total-devices">
-          总计: {{ filteredDevices.length }} 台设备
+          总计: {{ pagination.total }} 台设备
         </div>
+        <el-pagination
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="pagination.total"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
       </div>
     </el-card>
     

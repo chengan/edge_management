@@ -62,4 +62,17 @@ export interface AddDeviceRequest {
   bandwidth: number
   environment: string
   config: Record<string, any>
+}
+
+export interface DeviceQueryParams {
+  page: number;
+  pageSize: number;
+  status?: string;
+  group?: string;
+  keyword?: string;
+}
+
+export interface DeviceListResponse {
+  list: Device[];
+  total: number;
 } 

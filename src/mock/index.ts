@@ -90,26 +90,89 @@ Mock.mock('/api/dashboard/stats', 'get', (options: any) => {
   return result
 })
 
-// Devices list
-Mock.mock('/api/devices', 'get', () => {
-  const devices = []
-  for (let i = 0; i < 20; i++) {
-    devices.push({
-      id: Mock.Random.integer(1000, 9999),
-      name: `Edge-Device-${Mock.Random.integer(1000, 9999)}`,
-      ip: Mock.Random.ip(),
-      status: Mock.Random.pick(['online', 'offline', 'warning']),
-      cpu: Mock.Random.float(0, 100, 2, 2),
-      memory: Mock.Random.float(0, 100, 2, 2),
-      disk: Mock.Random.float(0, 100, 2, 2),
-      temperature: Mock.Random.float(30, 70, 2, 2),
-      group: Mock.Random.pick(['Production', 'Testing', 'Development']),
-      lastSeen: Mock.Random.datetime('yyyy-MM-dd HH:mm:ss')
-    })
+// Devices list - 修复版本
+Mock.mock('/api/devices', 'post', (options: any) => {
+  console.log('设备列表查询请求:', options)
+  
+  // 从请求体获取参数
+  const params = JSON.parse(options.body) || {
+    page: 1,
+    pageSize: 10,
+    status: '',
+    group: '',
+    keyword: ''
   }
+  
+  // 创建固定设备数据用于测试
+  const createDevices = () => {
+    const devices = []
+    for (let i = 0; i < 36; i++) {
+      devices.push({
+        id: 1000 + i,
+        name: `Edge-Device-${1000 + i}`,
+        ip: `192.168.1.${100 + i}`,
+        status: ['online', 'offline', 'warning'][i % 3],
+        model: `Model-${['A', 'B', 'C'][i % 3]}`,
+        firmwareVersion: `v${1 + (i % 5)}.0`,
+        cpu: 10 + (i % 70),
+        memory: 20 + (i % 60),
+        disk: 30 + (i % 50),
+        group: ['Production', 'Testing', 'Development'][i % 3],
+        uptime: `${1 + i} days`,
+        network: {
+          in: 1000 * i,
+          out: 500 * i
+        },
+        tasks: [
+          {
+            name: `Task-${i}`,
+            cpu: 5 + (i % 20),
+            memory: 10 + (i % 30),
+            status: 'running'
+          }
+        ],
+        lastSeen: new Date().toISOString(),
+        bandwidth: 100 + (i * 10),
+        environment: ['Production', 'Testing', 'Development'][i % 3]
+      })
+    }
+    return devices
+  }
+  
+  // 所有设备数据
+  const allDevices = createDevices()
+  
+  // 过滤设备
+  let filteredDevices = [...allDevices]
+  
+  if (params.status) {
+    filteredDevices = filteredDevices.filter(device => device.status === params.status)
+  }
+  
+  if (params.group) {
+    filteredDevices = filteredDevices.filter(device => device.group === params.group)
+  }
+  
+  if (params.keyword) {
+    const keyword = params.keyword.toLowerCase()
+    filteredDevices = filteredDevices.filter(device =>
+      device.name.toLowerCase().includes(keyword) ||
+      device.ip.includes(keyword)
+    )
+  }
+  
+  // 计算分页
+  const total = filteredDevices.length
+  const start = (params.page - 1) * params.pageSize
+  const end = start + params.pageSize
+  const pageData = filteredDevices.slice(start, end)
+  
   return {
     code: 200,
-    data: devices
+    data: {
+      list: pageData,
+      total: total
+    }
   }
 })
 
