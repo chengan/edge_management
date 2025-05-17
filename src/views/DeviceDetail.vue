@@ -20,10 +20,9 @@ let memoryChart: echarts.ECharts | null = null
 let networkChart: echarts.ECharts | null = null
 
 // WebSocket 实时更新
-// 去掉时间戳，使用设备ID作为唯一标识
-const wsUrl = import.meta.env.DEV 
-  ? `ws://localhost:3000/ws/device/${deviceId}` 
-  : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}://${window.location.host}/ws/device/${deviceId}`
+// 从环境变量读取 WebSocket 基础 URL
+const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://127.0.0.1:8083/ws';
+const wsUrl = `${wsBaseUrl}/device/${deviceId}`;
 
 let ws: WebSocketService | null = null;
 let unsubscribe: (() => void) | null = null;

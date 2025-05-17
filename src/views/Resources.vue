@@ -277,10 +277,10 @@ onMounted(async () => {
       }
     }
     
-    // 使用与仪表盘相同的URL模式，保持一致性
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsHost = window.location.host
-    const wsUrl = `${wsProtocol}//${wsHost}/ws/resources`
+    // 从环境变量读取 WebSocket 基础 URL
+    const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://127.0.0.1:8083/ws';
+    const wsUrl = `${wsBaseUrl}/resources`;
+    
     ws = new WebSocketService(wsUrl)
 
     // 处理 WebSocket 消息，为资源页面明确指定消息类型
