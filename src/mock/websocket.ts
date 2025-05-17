@@ -4,11 +4,8 @@ import type { WebSocketMessage } from '../utils/websocket/types'
 interface DeviceStatus {
   cpu: number
   memory: number
-  disk: number
-  network: {
-    in: number
-    out: number
-  }
+  storage: number
+  networkIo: [number, number]
 }
 
 // 为了解决类型问题，使用 mock-socket 中的 Server.Client 类型
@@ -48,11 +45,11 @@ export class MockWebSocketServer {
     return {
       cpu: Math.random() * 100,
       memory: Math.random() * 100,
-      disk: Math.random() * 100,
-      network: {
-        in: Math.random() * 100,
-        out: Math.random() * 100
-      }
+      storage: Math.random() * 100,
+      networkIo: [
+        Math.floor(Math.random() * 100 * 1024 * 1024),
+        Math.floor(Math.random() * 50 * 1024 * 1024)
+      ]
     }
   }
 
@@ -61,21 +58,30 @@ export class MockWebSocketServer {
       totalDevices: 471,
       onlineDevices: 96,
       offlineDevices: 14,
-      alertsCount: 11,
-      cpuUsage: parseFloat((Math.random() * 30 + 40).toFixed(2)),  // 40-70%范围随机
+      warningCount: 11,
+      cpuUsage: parseFloat((Math.random() * 30 + 40).toFixed(2)),
       memoryUsage: parseFloat((Math.random() * 30 + 40).toFixed(2)),
-      networkUsage: parseFloat((Math.random() * 30 + 10).toFixed(2)),
-      diskUsage: parseFloat((Math.random() * 20 + 70).toFixed(2))
+      networkIo: [
+        Math.floor(Math.random() * 300 * 1024 * 1024 + 100 * 1024 * 1024),
+        Math.floor(Math.random() * 50 * 1024 * 1024 + 10 * 1024 * 1024)
+      ],
+      storageUsage: parseFloat((Math.random() * 20 + 70).toFixed(2))
     };
   }
 
   private generateResourceStatus(): DeviceStatus {
-    // 可以生成针对资源页面的数据
-    return this.generateDeviceStatus();
+    return {
+      cpu: parseFloat((Math.random() * 100).toFixed(2)),
+      memory: parseFloat((Math.random() * 100).toFixed(2)),
+      storage: parseFloat((Math.random() * 100).toFixed(2)),
+      networkIo: [
+        Math.floor(Math.random() * 100 * 1024 * 1024),
+        Math.floor(Math.random() * 50 * 1024 * 1024)
+      ]
+    };
   }
 
   private generateDeviceData(deviceId: number): any {
-    // 基础设备数据
     return {
       id: deviceId,
       name: `设备-${deviceId}`,
@@ -87,10 +93,11 @@ export class MockWebSocketServer {
       uptime: `${Math.floor(Math.random() * 720)}小时`,
       cpu: parseFloat((Math.random() * 100).toFixed(2)),
       memory: parseFloat((Math.random() * 100).toFixed(2)),
-      network: {
-        in: parseFloat((Math.random() * 20).toFixed(2)),
-        out: parseFloat((Math.random() * 15).toFixed(2))
-      },
+      networkIo: [
+        Math.floor(Math.random() * 20 * 1024 * 1024),
+        Math.floor(Math.random() * 15 * 1024 * 1024)
+      ],
+      storageUsage: parseFloat((Math.random() * 100).toFixed(2)),
       tasks: [
         {
           name: '数据采集',
@@ -129,11 +136,22 @@ export class MockWebSocketServer {
           this.clientSockets.add(socket);
           
           // 发送初始数据
-          const initialStatus = this.generateDeviceStatus()
-          socket.send(JSON.stringify({
-            type: 'DEVICE_STATUS',
-            data: initialStatus
-          }))
+          if (this.serverType === 'dashboard') {
+            socket.send(JSON.stringify({
+              type: 'DASHBOARD_STATS',
+              data: this.generateDashboardStats()
+            }));
+          } else if (this.serverType === 'resources') {
+            socket.send(JSON.stringify({
+              type: 'DASHBOARD_STATS',
+              data: this.generateDashboardStats()
+            }));
+          } else if (this.serverType === 'device' && this.deviceId) {
+            socket.send(JSON.stringify({
+              type: 'DEVICE_STATUS',
+              data: this.generateDeviceData(Number(this.deviceId))
+            }));
+          }
 
           // 设置定时器，模拟实时数据更新
           if (this.updateInterval) {
@@ -151,7 +169,6 @@ export class MockWebSocketServer {
             
             // 根据服务器类型发送不同的消息
             if (this.serverType === 'dashboard' || this.serverType === 'default') {
-              // 发送仪表盘数据更新
               this.broadcastMessage({
                 type: 'DASHBOARD_STATS_UPDATE',
                 data: this.generateDashboardStats()
@@ -159,16 +176,13 @@ export class MockWebSocketServer {
             }
             
             if (this.serverType === 'resources' || this.serverType === 'default') {
-              // 发送资源监控数据更新
-              const status = this.generateDeviceStatus()
               this.broadcastMessage({
-                type: 'DEVICE_STATUS_UPDATE',
-                data: status
+                type: 'RESOURCE_STATUS',
+                data: this.generateResourceStatus()
               });
             }
             
             if (this.serverType === 'device' && this.deviceId) {
-              // 发送设备详情更新
               this.broadcastMessage({
                 type: 'DEVICE_UPDATE',
                 data: this.generateDeviceData(Number(this.deviceId))
@@ -192,7 +206,7 @@ export class MockWebSocketServer {
                   break
 
                 case 'GET_DASHBOARD_STATS':
-                  if (this.serverType === 'dashboard' || this.serverType === 'default') {
+                  if (this.serverType === 'dashboard' || this.serverType === 'default' || this.serverType === 'resources') {
                     const dashboardStats = this.generateDashboardStats()
                     socket.send(JSON.stringify({
                       type: 'DASHBOARD_STATS',
@@ -225,7 +239,7 @@ export class MockWebSocketServer {
                   if (this.serverType === 'device' && this.deviceId) {
                     const deviceData = this.generateDeviceData(Number(this.deviceId));
                     socket.send(JSON.stringify({
-                      type: 'DEVICE_STATUS',
+                      type: 'DEVICE_INFO_UPDATE',
                       data: deviceData
                     }));
                   }

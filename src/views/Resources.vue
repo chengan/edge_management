@@ -8,11 +8,8 @@ import { ElMessage } from 'element-plus'
 interface ResourceData {
   cpu: number
   memory: number
-  disk: number
-  network: {
-    in: number
-    out: number
-  }
+  storage: number
+  networkIo: [number, number]
 }
 
 // 图表实例
@@ -24,18 +21,16 @@ const loading = ref(true)
 const resourceData = ref<ResourceData>({
   cpu: 0,
   memory: 0,
-  disk: 0,
-  network: {
-    in: 0,
-    out: 0
-  }
+  storage: 0,
+  networkIo: [0, 0]
 })
 
 // 需要在 data 中添加数据存储
 const timeData = ref<string[]>([])
 const cpuData = ref<number[]>([])
 const memoryData = ref<number[]>([])
-const networkData = ref<number[]>([])
+const networkInData = ref<number[]>([])
+const networkOutData = ref<number[]>([])
 
 // 时间格式化函数
 const formatTime = (date: Date) => {
@@ -89,6 +84,7 @@ const getChartBaseOption = (title: string) => {
       min: 0,
       max: 100,
       name: '使用率(%)',
+      axisLabel: {},
       splitLine: {
         lineStyle: {
           type: 'dashed'
@@ -135,10 +131,118 @@ const initCharts = () => {
   const networkChartDom = document.getElementById('networkChart')
   if (networkChartDom) {
     networkChart = echarts.init(networkChartDom)
-    const option = getChartBaseOption('网络使用趋势')
-    option.series[0].name = '网络使用率'
-    option.series[0].itemStyle.color = '#73D13D'
-    networkChart.setOption(option)
+    
+    // 网络图表需要显示双线，使用完全自定义配置
+    const option = {
+      title: {
+        text: '网络吞吐趋势',
+        left: 'center',
+        textStyle: {
+          fontSize: 14
+        }
+      },
+      tooltip: {
+        trigger: 'axis',
+        formatter: function(params: any) {
+          const time = params[0].name;
+          const inValue = params[0].value;
+          const outValue = params[1].value;
+          
+          // 格式化显示
+          const formatBytes = (value: number) => {
+            if (value >= 1024 * 1024 * 1024) {
+              return (value / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+            } else if (value >= 1024 * 1024) {
+              return (value / (1024 * 1024)).toFixed(2) + ' MB';
+            } else if (value >= 1024) {
+              return (value / 1024).toFixed(2) + ' KB';
+            }
+            return value + ' B';
+          };
+          
+          return `${time}<br/>入网: ${formatBytes(inValue)}<br/>出网: ${formatBytes(outValue)}`;
+        }
+      },
+      legend: {
+        data: ['入网', '出网'],
+        top: 25
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        top: '60px',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: timeData.value,
+        axisLabel: {
+          interval: 4,
+          formatter: function(value: string) {
+            return value
+          }
+        }
+      },
+      yAxis: {
+        type: 'value',
+        min: 0,
+        max: 1024 * 1024 * 1024,
+        name: 'Bytes',
+        axisLabel: {
+          formatter: function(value: number) {
+            if (value >= 1024 * 1024 * 1024) {
+              return (value / (1024 * 1024 * 1024)).toFixed(1) + 'GB';
+            } else if (value >= 1024 * 1024) {
+              return (value / (1024 * 1024)).toFixed(1) + 'MB';
+            } else if (value >= 1024) {
+              return (value / 1024).toFixed(1) + 'KB';
+            }
+            return value + 'B';
+          }
+        },
+        splitLine: {
+          lineStyle: {
+            type: 'dashed'
+          }
+        }
+      },
+      series: [
+        {
+          name: '入网',
+          type: 'line',
+          smooth: true,
+          areaStyle: {
+            opacity: 0.3
+          },
+          itemStyle: {
+            color: '#4e7ae7' // 蓝色表示入网
+          },
+          emphasis: {
+            focus: 'series'
+          },
+          data: networkInData.value
+        },
+        {
+          name: '出网',
+          type: 'line',
+          smooth: true,
+          areaStyle: {
+            opacity: 0.3
+          },
+          itemStyle: {
+            color: '#73D13D' // 绿色表示出网
+          },
+          emphasis: {
+            focus: 'series'
+          },
+          data: networkOutData.value
+        }
+      ]
+    };
+    
+    networkChart.setOption(option);
   }
 }
 
@@ -151,15 +255,19 @@ const updateCharts = (data: ResourceData) => {
   timeData.value.push(timeStr)
   cpuData.value.push(formatValue(data.cpu))
   memoryData.value.push(formatValue(data.memory))
-  networkData.value.push(formatValue((data.network.in + data.network.out) / 2))
+  
+  // 分别存储入网和出网数据
+  networkInData.value.push(formatValue(data.networkIo[0]))
+  networkOutData.value.push(formatValue(data.networkIo[1]))
 
-  // 保持最近12个数据点（1小时，每5分钟一个点）
+  // 保持最近12个数据点
   const maxDataPoints = 12
   if (timeData.value.length > maxDataPoints) {
     timeData.value.shift()
     cpuData.value.shift()
     memoryData.value.shift()
-    networkData.value.shift()
+    networkInData.value.shift()
+    networkOutData.value.shift()
   }
 
   // 更新所有图表
@@ -182,9 +290,17 @@ const updateCharts = (data: ResourceData) => {
     memoryChart.setOption(updateOption)
   }
 
+  // 网络图表更新
   if (networkChart) {
-    updateOption.series[0].data = networkData.value
-    networkChart.setOption(updateOption)
+    networkChart.setOption({
+      xAxis: {
+        data: timeData.value
+      },
+      series: [
+        { data: networkInData.value },
+        { data: networkOutData.value }
+      ]
+    })
   }
 }
 
@@ -277,30 +393,45 @@ onMounted(async () => {
       }
     }
     
-    // 从环境变量读取 WebSocket 基础 URL
+    // 从环境变量读取 WebSocket 基础 URL，改为连接到 dashboard 端点
     const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://127.0.0.1:8083/ws';
-    const wsUrl = `${wsBaseUrl}/resources`;
+    const wsUrl = `${wsBaseUrl}/dashboard`; // 修改为 dashboard
     
     ws = new WebSocketService(wsUrl)
 
-    // 处理 WebSocket 消息，为资源页面明确指定消息类型
-    const unsubscribe = ws.onMessage((data) => {
-      // 只处理资源页面所需的消息类型
-      if (data.type === 'DEVICE_STATUS' || data.type === 'DEVICE_STATUS_UPDATE' || data.type === 'RESOURCE_STATUS_UPDATE') {
-        // 收到数据更新，确保loading状态被关闭
+    // 处理 WebSocket 消息，使用与 Dashboard.vue 相同的消息类型
+    const unsubscribe = ws.onMessage((message) => {
+      // 监听与 Dashboard.vue 相同的消息类型
+      if (message.type === 'DASHBOARD_STATS' || message.type === 'DASHBOARD_STATS_UPDATE') {
+        console.log('Resources页面收到WebSocket消息:', message.type);
+        
+        if (!message.data) {
+          console.error('收到的资源数据为空');
+          return;
+        }
+        
         loading.value = false;
         
-        resourceData.value = data.data;
-        updateCharts(data.data);
+        // 从 Dashboard 数据中提取资源相关字段
+        resourceData.value = {
+          cpu: message.data.cpuUsage,
+          memory: message.data.memoryUsage,
+          storage: message.data.storageUsage,
+          networkIo: message.data.networkIo
+        };
+        
+        console.log('资源数据更新:', resourceData.value);
+        updateCharts(resourceData.value);
       }
     })
 
     // 连接 WebSocket
     await ws.connect();
+    console.log('资源监控WebSocket连接成功');
     
-    // 请求初始数据，明确指定为资源页面请求
+    // 使用与 Dashboard.vue 相同的请求类型
     ws.send({
-      type: 'GET_RESOURCE_STATUS',
+      type: 'GET_DASHBOARD_STATS', // 修改为与 Dashboard 相同的请求类型
       data: null
     });
 

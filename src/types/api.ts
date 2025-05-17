@@ -37,8 +37,8 @@ export interface DashboardStats {
   alertsCount: number
   cpuUsage: number
   memoryUsage: number
-  networkUsage: number
-  diskUsage: number
+  networkIo: [number, number]
+  storageUsage: number
 }
 
 export type { Alert }

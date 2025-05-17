@@ -157,26 +157,31 @@ const initCharts = () => {
     },
     xAxis: [{
       type: 'category',
-      data: ['网络流量'],
+      data: ['网络吞吐量'],
       axisTick: { show: false }
     }],
     yAxis: [{
       type: 'value',
-      name: 'MB/s',
+      name: 'Bytes',
       axisLabel: {
-        formatter: '{value}'
+        formatter: function (value: number) {
+          if (value >= 1024 * 1024 * 1024) { return (value / (1024 * 1024 * 1024)).toFixed(2) + ' GB'; }
+          if (value >= 1024 * 1024) { return (value / (1024 * 1024)).toFixed(2) + ' MB'; }
+          if (value >= 1024) { return (value / 1024).toFixed(2) + ' KB'; }
+          return value + ' B';
+        }
       }
     }],
     series: [
       {
         name: '入站',
         type: 'bar',
-        data: [formatValue(device.value.network.in)]
+        data: [formatValue(device.value.networkIo[0])]
       },
       {
         name: '出站',
         type: 'bar',
-        data: [formatValue(device.value.network.out)]
+        data: [formatValue(device.value.networkIo[1])]
       }
     ]
   })
@@ -204,8 +209,8 @@ const updateCharts = () => {
 
   networkChart?.setOption({
     series: [
-      { data: [formatValue(device.value.network.in)] },
-      { data: [formatValue(device.value.network.out)] }
+      { data: [formatValue(device.value.networkIo[0])] },
+      { data: [formatValue(device.value.networkIo[1])] }
     ]
   })
 }
@@ -228,17 +233,16 @@ const handleDeviceUpdate = (message: WebSocketMessage) => {
     return;
   }
   
-  console.log('接收到设备更新数据:', message.type);
+  console.log('接收到设备更新数据:', message.type, message.data);
   
   // 更新设备数据
   device.value = { 
     ...device.value, 
     ...message.data,
-    // 确保网络数据格式正确
-    network: {
-      in: message.data.network?.in ?? device.value.network.in,
-      out: message.data.network?.out ?? device.value.network.out
-    }
+    // Ensure network data structure is updated from networkIo
+    network: message.data.networkIo ? 
+      { in: message.data.networkIo[0], out: message.data.networkIo[1] } : 
+      device.value.networkIo
   };
   
   // 更新图表
@@ -467,7 +471,7 @@ const getGroupLabel = (group: string) => {
         <el-card shadow="hover" class="mb-4">
           <template #header>
             <div class="card-header">
-              <span>网络流量</span>
+              <span>网络吞吐量</span>
               <el-tag size="small" type="info">
                 实时
               </el-tag>

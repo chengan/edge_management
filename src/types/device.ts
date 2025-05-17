@@ -25,27 +25,30 @@ export interface Device {
   environment: string
 }
 
+export interface DeviceNetworkInfo {
+  in: number
+  out: number
+}
+
 export interface DeviceDetail {
   id: number
   name: string
   ip: string
   status: 'online' | 'offline' | 'warning'
-  model: string
-  firmwareVersion: string
-  group: string
-  uptime: string
+  model?: string
+  firmwareVersion?: string
+  group?: string
+  uptime?: string
   cpu: number
   memory: number
-  network: {
-    in: number
-    out: number
-  }
-  tasks: {
+  networkIo: [number, number]
+  disk?: number
+  tasks?: Array<{
     name: string
     cpu: number
     memory: number
     status: 'running' | 'paused' | 'stopped'
-  }[]
+  }>
   lastSeen: string
 }
 

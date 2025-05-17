@@ -79,8 +79,11 @@ Mock.mock('/api/dashboard/stats', 'get', (options: any) => {
       alertsCount: Mock.Random.integer(0, 15),
       cpuUsage: Mock.Random.float(10, 80, 2, 2),
       memoryUsage: Mock.Random.float(30, 90, 2, 2),
-      networkUsage: Mock.Random.float(5, 50, 2, 2),
-      diskUsage: Mock.Random.float(20, 85, 2, 2)
+      networkIo: [
+        Mock.Random.integer(100000000, 500000000),
+        Mock.Random.integer(10000000, 100000000)
+      ],
+      storageUsage: Mock.Random.float(20, 85, 2, 2)
     }
   }
   console.log('Mock生成的仪表盘数据:', result)
@@ -122,11 +125,11 @@ Mock.mock(new RegExp('/api/devices/.*'), 'get', (options: any) => {
       status: Mock.Random.pick(['online', 'offline', 'warning']),
       cpu: Mock.Random.float(0, 100, 2, 2),
       memory: Mock.Random.float(0, 100, 2, 2),
-      disk: Mock.Random.float(0, 100, 2, 2),
-      network: {
-        in: Mock.Random.float(0, 100, 2, 2),
-        out: Mock.Random.float(0, 100, 2, 2)
-      },
+      storageUsage: Mock.Random.float(0,100,2,2),
+      networkIo: [
+        Mock.Random.integer(1000000, 50000000),
+        Mock.Random.integer(100000, 10000000)
+      ],
       temperature: Mock.Random.float(30, 70, 2, 2),
       model: `Model-${Mock.Random.character('ABCDEFG')}${Mock.Random.integer(10, 99)}`,
       firmwareVersion: `v${Mock.Random.float(1, 5, 1, 2)}`,

@@ -16,16 +16,16 @@ const stats = ref<DashboardStats>({
   alertsCount: 0,
   cpuUsage: 0,
   memoryUsage: 0,
-  networkUsage: 0,
-  diskUsage: 0
+  networkIo: [0, 0] as [number, number],
+  storageUsage: 0
 })
 
 // 图表实例
 let cpuChart: echarts.ECharts | null = null
 let memoryChart: echarts.ECharts | null = null
-let networkChart: echarts.ECharts | null = null
 let diskChart: echarts.ECharts | null = null
 let statusChart: echarts.ECharts | null = null
+let networkChart: echarts.ECharts | null = null
 
 // 从环境变量读取 WebSocket 基础 URL
 const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://127.0.0.1:8083/ws';
@@ -112,8 +112,8 @@ const handleStatsUpdate = (data: any) => {
         alertsCount: data.data.alertsCount ?? stats.value.alertsCount,
         cpuUsage: data.data.cpuUsage ?? stats.value.cpuUsage,
         memoryUsage: data.data.memoryUsage ?? stats.value.memoryUsage,
-        networkUsage: data.data.networkUsage ?? stats.value.networkUsage,
-        diskUsage: data.data.diskUsage ?? stats.value.diskUsage
+        networkIo: data.data.networkIo ?? stats.value.networkIo,
+        storageUsage: data.data.storageUsage ?? stats.value.storageUsage
       };
       
       console.log('仪表盘数据更新:', data.data);
@@ -213,49 +213,6 @@ const initCharts = () => {
     }]
   })
   
-  // 网络使用率图表
-  networkChart = echarts.init(document.getElementById('network-chart') as HTMLElement)
-  networkChart.setOption({
-    series: [{
-      type: 'gauge',
-      startAngle: 90,
-      endAngle: -270,
-      pointer: { show: false },
-      progress: {
-        show: true,
-        overlap: false,
-        roundCap: true,
-        clip: false,
-        itemStyle: {
-          color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [
-              { offset: 0, color: '#722ed1' },
-              { offset: 1, color: '#531dab' }
-            ]
-          }
-        }
-      },
-      axisLine: {
-        lineStyle: {
-          width: 20,
-          color: [[1, '#f5f5f5']]
-        }
-      },
-      axisTick: { show: false },
-      splitLine: { show: false },
-      axisLabel: { show: false },
-      detail: {
-        fontSize: 24,
-        offsetCenter: [0, 0],
-        formatter: '{value}%',
-        color: 'auto'
-      },
-      data: [{ value: stats.value.networkUsage }]
-    }]
-  })
-  
   // 磁盘使用率图表
   diskChart = echarts.init(document.getElementById('disk-chart') as HTMLElement)
   diskChart.setOption({
@@ -295,7 +252,7 @@ const initCharts = () => {
         formatter: '{value}%',
         color: 'auto'
       },
-      data: [{ value: stats.value.diskUsage }]
+      data: [{ value: stats.value.storageUsage }]
     }]
   })
   
@@ -339,6 +296,59 @@ const initCharts = () => {
     ]
   })
   
+  // 网络吞吐量图表
+  networkChart = echarts.init(document.getElementById('network-chart') as HTMLElement)
+  networkChart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' }
+    },
+    legend: {
+      data: ['入网', '出网'],
+      top: 0,
+      textStyle: { fontSize: 12 }
+    },
+    grid: {
+      left: '3%',
+      right: '4%', 
+      bottom: '10%',
+      containLabel: true
+    },
+    xAxis: [{
+      type: 'category',
+      data: ['网络吞吐量'],
+      axisTick: { show: false }
+    }],
+    yAxis: [{
+      type: 'value',
+      name: 'Bytes',
+      axisLabel: {
+        formatter: function(value: number) {
+          if (value >= 1024*1024*1024) {
+            return (value/(1024*1024*1024)).toFixed(2) + ' GB';
+          } else if (value >= 1024*1024) {
+            return (value/(1024*1024)).toFixed(2) + ' MB';
+          } else if (value >= 1024) {
+            return (value/1024).toFixed(2) + ' KB';
+          }
+          return value + ' B';
+        }
+      }
+    }],
+    series: [
+      {
+        name: '入网',
+        type: 'bar',
+        data: [stats.value.networkIo[0]]
+      },
+      {
+        name: '出网',
+        type: 'bar',
+        data: [stats.value.networkIo[1]]
+      }
+    ]
+  })
+  
   // 处理窗口大小变化
   window.addEventListener('resize', () => {
     cpuChart?.resize()
@@ -358,12 +368,8 @@ const updateCharts = () => {
     series: [{ data: [{ value: stats.value.memoryUsage }] }]
   })
   
-  networkChart?.setOption({
-    series: [{ data: [{ value: stats.value.networkUsage }] }]
-  })
-  
   diskChart?.setOption({
-    series: [{ data: [{ value: stats.value.diskUsage }] }]
+    series: [{ data: [{ value: stats.value.storageUsage }] }]
   })
   
   statusChart?.setOption({
@@ -373,6 +379,13 @@ const updateCharts = () => {
         { value: stats.value.offlineDevices, name: '离线' }
       ]
     }]
+  })
+  
+  networkChart?.setOption({
+    series: [
+      { data: [stats.value.networkIo[0]] },
+      { data: [stats.value.networkIo[1]] }
+    ]
   })
 }
 
@@ -488,9 +501,9 @@ const navigateToAlerts = () => {
       <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
         <div class="gauge-card">
           <div class="gauge-header">
-            <span>网络使用率</span>
-            <el-tag :type="stats.networkUsage > 80 ? 'danger' : stats.networkUsage > 60 ? 'warning' : 'success'" size="small">
-              {{ stats.networkUsage }}%
+            <span>网络吞吐量</span>
+            <el-tag type="info" size="small">
+              实时
             </el-tag>
           </div>
           <div id="network-chart" class="gauge-chart"></div>
@@ -501,8 +514,8 @@ const navigateToAlerts = () => {
         <div class="gauge-card">
           <div class="gauge-header">
             <span>磁盘使用率</span>
-            <el-tag :type="stats.diskUsage > 80 ? 'danger' : stats.diskUsage > 60 ? 'warning' : 'success'" size="small">
-              {{ stats.diskUsage }}%
+            <el-tag :type="stats.storageUsage > 80 ? 'danger' : stats.storageUsage > 60 ? 'warning' : 'success'" size="small">
+              {{ stats.storageUsage }}%
             </el-tag>
           </div>
           <div id="disk-chart" class="gauge-chart"></div>
@@ -737,6 +750,13 @@ const navigateToAlerts = () => {
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
+}
+
+.network-total {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
 }
 
 @media (max-width: 768px) {
