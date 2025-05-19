@@ -73,6 +73,6 @@ export interface DeviceQueryParams {
 }
 
 export interface DeviceListResponse {
-  list: Device[];
   total: number;
+  devices: Device[];
 } 

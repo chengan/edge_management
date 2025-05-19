@@ -31,7 +31,8 @@ let networkChart: echarts.ECharts | null = null
 const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://127.0.0.1:8083/ws';
 const wsUrl = `${wsBaseUrl}/dashboard`;
 
-const ws = new WebSocketService(wsUrl)
+// 获取共享连接
+let ws: WebSocketService | null = WebSocketService.getSharedConnection(wsUrl);
 
 onMounted(async () => {
   try {
@@ -58,16 +59,23 @@ onMounted(async () => {
     
     // 4. 使用await等待连接完成
     await ws.connect();
-    console.log('仪表盘WebSocket连接成功');
     
-    // 5. 连接成功后请求数据
-    console.log('发送仪表盘数据请求');
-    ws.send({
-      type: 'GET_DASHBOARD_STATS',
-      data: null
-    });
+    // 只有当首次注册此消息类型时才发送和设置定时器
+    if (ws.registerPeriodicMessageType('GET_DASHBOARD_STATS')) {
+      // 发送初始请求
+      ws.send({
+        type: 'GET_DASHBOARD_STATS',
+        data: null
+      });
+      
+      // 设置定时消息
+      ws.setPeriodicMessage({
+        type: 'GET_DASHBOARD_STATS',
+        data: null
+      }, 10000);
+    }
     
-    // 6. 组件卸载时取消订阅
+    // 7. 组件卸载时取消订阅
     onUnmounted(() => {
       unsubscribe();
       // 清理图表实例
@@ -83,6 +91,9 @@ onMounted(async () => {
       } catch (error) {
         console.error('断开WebSocket连接失败:', error);
       }
+      
+      // 释放共享连接
+      WebSocketService.releaseSharedConnection(wsUrl);
     });
     
   } catch (error) {

@@ -304,9 +304,6 @@ const updateCharts = (data: ResourceData) => {
   }
 }
 
-// 初始化 WebSocket 连接
-let ws: WebSocketService | null = null
-
 // 添加阈值设置相关的响应式数据
 const thresholdForm = ref({
   cpuThreshold: 80,
@@ -377,29 +374,18 @@ const handleOptimize = async () => {
     optimizing.value = false;
   }
 }
+ // 从环境变量读取 WebSocket 基础 URL，改为连接到 dashboard 端点
+const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://127.0.0.1:8083/ws';
+const wsUrl = `${wsBaseUrl}/dashboard`; // 修改为 dashboard
+// 使用相同的代码结构，获取共享连接
+let ws: WebSocketService | null = WebSocketService.getSharedConnection(wsUrl);
 
 onMounted(async () => {
   // 初始化图表
   initCharts()
 
   try {
-    // 在挂载前确保没有活跃的 WebSocket 连接
-    if (ws) {
-      try {
-        ws.disconnect();
-        ws = null;
-      } catch (err) {
-        console.error('清理现有 WebSocket 连接失败:', err);
-      }
-    }
-    
-    // 从环境变量读取 WebSocket 基础 URL，改为连接到 dashboard 端点
-    const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://127.0.0.1:8083/ws';
-    const wsUrl = `${wsBaseUrl}/dashboard`; // 修改为 dashboard
-    
-    ws = new WebSocketService(wsUrl)
-
-    // 处理 WebSocket 消息，使用与 Dashboard.vue 相同的消息类型
+    // 直接使用共享连接
     const unsubscribe = ws.onMessage((message) => {
       // 监听与 Dashboard.vue 相同的消息类型
       if (message.type === 'DASHBOARD_STATS' || message.type === 'DASHBOARD_STATS_UPDATE') {
@@ -423,17 +409,24 @@ onMounted(async () => {
         console.log('资源数据更新:', resourceData.value);
         updateCharts(resourceData.value);
       }
-    })
-
+    });
+    
     // 连接 WebSocket
     await ws.connect();
     console.log('资源监控WebSocket连接成功');
     
-    // 使用与 Dashboard.vue 相同的请求类型
-    ws.send({
-      type: 'GET_DASHBOARD_STATS', // 修改为与 Dashboard 相同的请求类型
-      data: null
-    });
+    // 只有当消息类型未注册时才发送初始请求
+    if (ws.registerPeriodicMessageType('GET_DASHBOARD_STATS')) {
+      ws.send({
+        type: 'GET_DASHBOARD_STATS',
+        data: null
+      });
+      
+      ws.setPeriodicMessage({
+        type: 'GET_DASHBOARD_STATS',
+        data: null
+      }, 10000);
+    }
 
     // 如果连接成功但在一定时间内未收到数据，也应该关闭loading
     setTimeout(() => {
@@ -483,10 +476,11 @@ onUnmounted(() => {
       ws.disconnect()
     } catch (error) {
       console.error('断开 WebSocket 连接失败:', error)
-    } finally {
-      ws = null
     }
   }
+
+  // 卸载时释放引用
+  WebSocketService.releaseSharedConnection(wsUrl);
 })
 </script>
 

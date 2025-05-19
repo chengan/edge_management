@@ -15,6 +15,12 @@ console.log('Axios实例创建完成，baseURL:', import.meta.env.VITE_API_BASE_
 // 请求拦截器
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // 添加token到请求头
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`
+    }
+    
     console.log('发起请求，完整配置:', {
       url: config.url,
       method: config.method,
@@ -65,7 +71,10 @@ service.interceptors.response.use(
       switch (error.response.status) {
         case 401:
           message = '未授权，请重新登录'
-          // 可以在这里处理登录过期逻辑
+          // 处理登录过期逻辑
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          window.location.href = '/login'
           break
         case 403:
           message = '拒绝访问'

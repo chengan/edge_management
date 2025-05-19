@@ -51,14 +51,14 @@ const fetchDevices = async () => {
     console.log('获取到的设备列表响应:', response);
     
     // 检查响应结构
-    if (!response || !response.list) {
+    if (!response || !response.devices) {
       console.error('设备列表响应结构异常:', response);
       ElMessage.error('设备列表数据格式异常');
       return;
     }
     
     // 更新设备列表和分页信息
-    devices.value = response.list;
+    devices.value = response.devices;
     pagination.value.total = response.total;
   } catch (error) {
     console.error('加载设备列表失败:', error)

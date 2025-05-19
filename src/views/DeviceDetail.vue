@@ -280,6 +280,12 @@ const connectWebSocket = async () => {
       type: 'GET_DEVICE_INFO',
       data: { deviceId }
     });
+
+    // 设置定时消息，每10秒请求一次设备数据
+    ws.setPeriodicMessage({
+      type: 'GET_DEVICE_INFO',
+      data: { deviceId }
+    }, 10000);
   } catch (error) {
     console.error('WebSocket连接失败:', error);
     ElMessage.error('实时数据连接失败，将尝试重连');
