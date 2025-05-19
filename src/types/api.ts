@@ -41,4 +41,12 @@ export interface DashboardStats {
   storageUsage: number
 }
 
+// 注册参数类型
+export interface RegisterParams {
+  username: string
+  email: string
+  password: string
+  confirmPassword: string
+}
+
 export type { Alert }

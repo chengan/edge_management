@@ -428,5 +428,50 @@ Mock.mock('/api/devices/add', 'post', (options: any) => {
   }
 })
 
+// Register API
+Mock.mock(new RegExp('/register'), 'post', (options: any) => {
+  console.log('Mock注册接口被调用:', {
+    body: options.body,
+    url: options.url,
+    type: options.type
+  })
+  
+  const { username, email, password } = JSON.parse(options.body)
+  
+  // 检查用户名是否已存在
+  if (users[username]) {
+    return {
+      code: 400,
+      data: null,
+      message: '用户名已存在'
+    }
+  }
+  
+  // 模拟新用户注册
+  const newUserId = Object.keys(users).length + 1
+  users[username] = {
+    username,
+    password,
+    id: newUserId,
+    name: username,
+    avatar: `https://i.pravatar.cc/150?img=${newUserId + 70}`
+  }
+  
+  console.log('新用户注册成功:', users[username])
+  
+  return {
+    code: 200,
+    data: {
+      token: `mock-token-${username}-${newUserId}`,
+      user: {
+        id: newUserId,
+        username,
+        email,
+        role: 'user'
+      }
+    },
+    message: '注册成功'
+  }
+})
 
 export default Mock

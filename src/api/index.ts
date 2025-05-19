@@ -1,5 +1,5 @@
 import service from './config'
-import type { LoginParams, LoginResult, DashboardStats, Alert, UserProfile } from '../types/api'
+import type { LoginParams, LoginResult, DashboardStats, Alert, UserProfile, RegisterParams } from '../types/api'
 import type { Device, DeviceDetail, AddDeviceRequest, DeviceQueryParams, DeviceListResponse } from '../types/device'
 import type { Alert as AlertType } from '../types/alert'
 import type { Topology } from '../types/topology'
@@ -18,7 +18,8 @@ const ApiPath = {
   DEVICE_CONFIG: '/devices/:id/config',
   RESOURCE_THRESHOLD: '/resource/threshold',
   RESOURCE_OPTIMIZE: '/resource/optimize',
-  DEVICE_ADD: '/devices/add'
+  DEVICE_ADD: '/devices/add',
+  REGISTER: '/register'
 } as const
 
 // API 方法
@@ -104,6 +105,11 @@ const api = {
   // 添加设备
   addDevice(params: AddDeviceRequest) {
     return service.post<any, void>(ApiPath.DEVICE_ADD, params)
+  },
+
+  // 用户注册
+  register(params: RegisterParams) {
+    return service.post<any, LoginResult>(ApiPath.REGISTER, params)
   }
 }
 

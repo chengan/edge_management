@@ -28,7 +28,7 @@ const handleLogin = async () => {
     const encryptedPassword = CryptoJS.MD5(loginForm.password).toString()
     const success = await userStore.login(loginForm.username, encryptedPassword)
     if (success) {
-      router.push('/')
+      router.push({ name: 'dashboard' })
     } else {
       loginError.value = '用户名或密码错误'
     }
@@ -38,6 +38,10 @@ const handleLogin = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const goToRegister = () => {
+  router.push({ name: 'register' })
 }
 </script>
 
@@ -91,6 +95,12 @@ const handleLogin = async () => {
           >
             登录
           </el-button>
+        </el-form-item>
+        
+        <el-form-item>
+          <div class="register-link">
+            还没有账号？<el-link type="primary" @click="goToRegister">立即注册</el-link>
+          </div>
         </el-form-item>
       </el-form>
     </div>
@@ -157,5 +167,11 @@ const handleLogin = async () => {
   text-align: center;
   color: rgba(0, 0, 0, 0.45);
   font-size: 12px;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 14px;
 }
 </style>
