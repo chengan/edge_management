@@ -18,7 +18,7 @@ const ApiPath = {
   DEVICE_CONFIG: '/devices/:id/config',
   RESOURCE_THRESHOLD: '/resource/threshold',
   RESOURCE_OPTIMIZE: '/resource/optimize',
-  DEVICE_ADD: '/devices/add',
+  DEVICE_ADD: '/devices/deploy',
   REGISTER: '/register'
 } as const
 

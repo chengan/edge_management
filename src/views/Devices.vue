@@ -217,14 +217,12 @@ const addDeviceDialogVisible = ref(false)
 const addDeviceFormRef = ref()
 const addDeviceForm = ref({
   ip: '',
-  name: '',
+  deviceName: '',
   username: '',
   password: '',
-  cpu: 1,
-  memory: 1,
-  bandwidth: 100,
-  environment: '',
-  config: '{}'
+  group: '',
+  model: '',
+  firmwareVersion: ''
 })
 
 // 表单验证规则
@@ -233,7 +231,7 @@ const addDeviceRules = {
     { required: true, message: '请输入服务器IP', trigger: 'blur' },
     { pattern: /^(\d{1,3}\.){3}\d{1,3}$/, message: '请输入正确的IP地址', trigger: 'blur' }
   ],
-  name: [
+  deviceName: [
     { required: true, message: '请输入设备名称', trigger: 'blur' }
   ],
   username: [
@@ -242,23 +240,14 @@ const addDeviceRules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' }
   ],
-  environment: [
+  group: [
     { required: true, message: '请选择运行环境', trigger: 'change' }
   ],
-  config: [
-    { 
-      validator: (rule: any, value: string) => {
-        try {
-          if (value) {
-            JSON.parse(value)
-          }
-          return Promise.resolve()
-        } catch (error) {
-          return Promise.reject('请输入有效的JSON格式')
-        }
-      },
-      trigger: 'blur'
-    }
+  model: [
+    { required: true, message: '请输入模型', trigger: 'blur' }
+  ],
+  firmwareVersion: [
+    { required: true, message: '请输入固件版本', trigger: 'blur' }
   ]
 }
 
@@ -267,14 +256,12 @@ const openAddDeviceDialog = () => {
   addDeviceDialogVisible.value = true
   addDeviceForm.value = {
     ip: '',
-    name: '',
+    deviceName: '',
     username: '',
     password: '',
-    cpu: 1,
-    memory: 1,
-    bandwidth: 100,
-    environment: '',
-    config: '{}'
+    group: '',
+    model: '',
+    firmwareVersion: ''
   }
 }
 
@@ -287,11 +274,14 @@ const handleAddDeviceSubmit = async () => {
     
     //密码加密
     const encryptedPassword = CryptoJS.MD5(addDeviceForm.value.password).toString()
-    addDeviceForm.value.password = encryptedPassword
+    
+    // 移除config字段，仅发送后端期望的字段
+    const { ...deviceData } = addDeviceForm.value
+    
     // 调用API添加设备
     await api.addDevice({
-      ...addDeviceForm.value,
-      config: JSON.parse(addDeviceForm.value.config)
+      ...deviceData,
+      password: encryptedPassword
     })
     
     ElMessage.success('设备添加成功')
@@ -394,11 +384,11 @@ const handleAddDeviceSubmit = async () => {
           </template>
         </el-table-column>
         
-        <el-table-column prop="disk" label="磁盘" width="120">
+        <el-table-column prop="storage" label="磁盘" width="120">
           <template #default="scope">
             <el-progress 
-              :percentage="scope.row.disk" 
-              :status="getStatusClass(scope.row.disk)"
+              :percentage="scope.row.storage" 
+              :status="getStatusClass(scope.row.storage)"
             />
           </template>
         </el-table-column>
@@ -537,8 +527,8 @@ const handleAddDeviceSubmit = async () => {
           <el-input v-model="addDeviceForm.ip" placeholder="请输入服务器IP"/>
         </el-form-item>
         
-        <el-form-item label="设备名称" prop="name" required>
-          <el-input v-model="addDeviceForm.name" placeholder="请输入设备名称"/>
+        <el-form-item label="设备名称" prop="deviceName" required>
+          <el-input v-model="addDeviceForm.deviceName" placeholder="请输入设备名称"/>
         </el-form-item>
         
         <el-form-item label="用户名" prop="username" required>
@@ -553,48 +543,20 @@ const handleAddDeviceSubmit = async () => {
           />
         </el-form-item>
         
-        <el-form-item label="CPU限制(核)" prop="cpu" required>
-          <el-input-number 
-            v-model="addDeviceForm.cpu" 
-            :min="1" 
-            :max="128"
-            placeholder="请输入CPU核心数"
-          />
-        </el-form-item>
-        
-        <el-form-item label="内存限制(GB)" prop="memory" required>
-          <el-input-number 
-            v-model="addDeviceForm.memory" 
-            :min="1" 
-            :max="1024"
-            placeholder="请输入内存大小"
-          />
-        </el-form-item>
-        
-        <el-form-item label="带宽(Mbps)" prop="bandwidth" required>
-          <el-input-number 
-            v-model="addDeviceForm.bandwidth" 
-            :min="1" 
-            :max="10000"
-            placeholder="请输入带宽大小"
-          />
-        </el-form-item>
-        
-        <el-form-item label="运行环境" prop="environment" required>
-          <el-select v-model="addDeviceForm.environment" style="width: 100%">
+        <el-form-item label="运行环境" prop="group" required>
+          <el-select v-model="addDeviceForm.group" style="width: 100%">
             <el-option label="生产环境" value="Production" />
             <el-option label="测试环境" value="Testing" />
             <el-option label="开发环境" value="Development" />
           </el-select>
         </el-form-item>
         
-        <el-form-item label="设备配置" prop="config">
-          <el-input
-            type="textarea"
-            v-model="addDeviceForm.config"
-            :rows="4"
-            placeholder="请输入JSON格式的设备配置"
-          />
+        <el-form-item label="模型" prop="model" required>
+          <el-input v-model="addDeviceForm.model" placeholder="请输入设备型号"/>
+        </el-form-item>
+        
+        <el-form-item label="固件版本" prop="firmwareVersion" required>
+          <el-input v-model="addDeviceForm.firmwareVersion" placeholder="请输入固件版本"/>
         </el-form-item>
       </el-form>
       <template #footer>

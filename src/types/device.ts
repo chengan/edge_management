@@ -9,7 +9,7 @@ export interface Device {
   uptime: string
   cpu: number
   memory: number
-  disk: number
+  storage: number
   network: {
     in: number
     out: number
@@ -34,34 +34,32 @@ export interface DeviceDetail {
   id: number
   name: string
   ip: string
+  username?: string
+  password?: string
   status: 'online' | 'offline' | 'warning'
   model?: string
   firmwareVersion?: string
   group?: string
-  uptime?: string
+  uptime?: number
   cpu: number
   memory: number
-  networkIo: [number, number]
-  disk?: number
-  tasks?: Array<{
-    name: string
-    cpu: number
-    memory: number
-    status: 'running' | 'paused' | 'stopped'
-  }>
-  lastSeen: string
+  storage?: number
+  network?: string
+  networkIo?: [number, number]
+  tasks?: string
+  parsedTasks?: string[]
+  lastSeen?: string
+  restApi?: null | string
 }
 
 export interface AddDeviceRequest {
   ip: string
-  name: string
   username: string
+  deviceName: string
   password: string
-  cpu: number
-  memory: number
-  bandwidth: number
-  environment: string
-  config: Record<string, any>
+  group: string
+  model: string
+  firmwareVersion: string
 }
 
 export interface DeviceQueryParams {

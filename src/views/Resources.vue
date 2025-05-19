@@ -44,6 +44,30 @@ const formatValue = (value: number) => {
   return Number(value.toFixed(2))
 }
 
+// 在组件顶部或单独的工具文件中定义公共函数
+interface FormatBytesOptions {
+  precision?: number;  // 小数点位数
+  space?: boolean;    // 数字和单位之间是否需要空格
+}
+
+const formatBytes = (value: number, options: FormatBytesOptions = {}) => {
+  const { 
+    precision = 1,    // 默认保留1位小数
+    space = true      // 默认添加空格
+  } = options;
+  
+  const spacer = space ? ' ' : '';
+  
+  if (value >= 1024 * 1024 * 1024) {
+    return `${(value / (1024 * 1024 * 1024)).toFixed(precision)}${spacer}GB`;
+  } else if (value >= 1024 * 1024) {
+    return `${(value / (1024 * 1024)).toFixed(precision)}${spacer}MB`;
+  } else if (value >= 1024) {
+    return `${(value / 1024).toFixed(precision)}${spacer}KB`;
+  }
+  return `${value}${spacer}B`;
+};
+
 // 获取图表基础配置
 const getChartBaseOption = (title: string) => {
   return {
@@ -148,19 +172,7 @@ const initCharts = () => {
           const inValue = params[0].value;
           const outValue = params[1].value;
           
-          // 格式化显示
-          const formatBytes = (value: number) => {
-            if (value >= 1024 * 1024 * 1024) {
-              return (value / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
-            } else if (value >= 1024 * 1024) {
-              return (value / (1024 * 1024)).toFixed(2) + ' MB';
-            } else if (value >= 1024) {
-              return (value / 1024).toFixed(2) + ' KB';
-            }
-            return value + ' B';
-          };
-          
-          return `${time}<br/>入网: ${formatBytes(inValue)}<br/>出网: ${formatBytes(outValue)}`;
+          return `${time}<br/>入网: ${formatBytes(inValue, { precision: 2 })}<br/>出网: ${formatBytes(outValue, { precision: 2 })}`;
         }
       },
       legend: {
@@ -188,19 +200,10 @@ const initCharts = () => {
       yAxis: {
         type: 'value',
         min: 0,
-        max: 1024 * 1024 * 1024,
+        max: 200 * 1024 * 1024,
         name: 'Bytes',
         axisLabel: {
-          formatter: function(value: number) {
-            if (value >= 1024 * 1024 * 1024) {
-              return (value / (1024 * 1024 * 1024)).toFixed(1) + 'GB';
-            } else if (value >= 1024 * 1024) {
-              return (value / (1024 * 1024)).toFixed(1) + 'MB';
-            } else if (value >= 1024) {
-              return (value / 1024).toFixed(1) + 'KB';
-            }
-            return value + 'B';
-          }
+          formatter: (value: number) => formatBytes(value)
         },
         splitLine: {
           lineStyle: {

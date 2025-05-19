@@ -32,10 +32,54 @@ const formatValue = (value: number) => {
   return Number(value.toFixed(2))
 }
 
+// 添加处理网络数据的函数
+const parseNetworkData = (device: DeviceDetail | null) => {
+  if (!device) return;
+  
+  // 检查 network 是否为字符串，如果是则解析
+  if (typeof device.network === 'string') {
+    try {
+      const networkData = JSON.parse(device.network);
+      device.networkIo = [networkData.in || 0, networkData.out || 0];
+    } catch (error) {
+      console.error('解析网络数据失败:', error);
+      device.networkIo = [0, 0]; // 设置默认值
+    }
+  } else if (!device.networkIo) {
+    // 如果 networkIo 不存在，创建默认值
+    device.networkIo = [0, 0];
+  }
+}
+
+// 添加处理任务数据的函数
+const parseTasks = (device: DeviceDetail | null) => {
+  if (!device) return;
+  
+  // 检查 tasks 是否为字符串，如果是则解析
+  if (typeof device.tasks === 'string') {
+    try {
+      device.parsedTasks = JSON.parse(device.tasks);
+    } catch (error) {
+      console.error('解析任务数据失败:', error);
+      device.parsedTasks = []; // 设置默认值
+    }
+  } else if (!device.parsedTasks) {
+    // 如果 parsedTasks 不存在，创建默认空数组
+    device.parsedTasks = [];
+  }
+}
+
 const fetchDeviceDetails = async () => {
   try {
     const data = await api.getDeviceDetail(deviceId)
     device.value = data
+    
+    // 处理网络数据
+    parseNetworkData(device.value);
+    
+    // 处理任务数据
+    parseTasks(device.value);
+    
     initCharts()
   } catch (error) {
     console.error('获取设备详情失败:', error)
@@ -140,6 +184,11 @@ const initCharts = () => {
 
   // 网络流量图表
   networkChart = echarts.init(document.getElementById('network-chart') as HTMLElement)
+  
+  // 确保 networkIo 存在
+  const networkInValue = device.value.networkIo ? formatValue(device.value.networkIo[0]) : 0;
+  const networkOutValue = device.value.networkIo ? formatValue(device.value.networkIo[1]) : 0;
+  
   networkChart.setOption({
     tooltip: {
       trigger: 'axis',
@@ -176,12 +225,12 @@ const initCharts = () => {
       {
         name: '入站',
         type: 'bar',
-        data: [formatValue(device.value.networkIo[0])]
+        data: [networkInValue]
       },
       {
         name: '出站',
         type: 'bar',
-        data: [formatValue(device.value.networkIo[1])]
+        data: [networkOutValue]
       }
     ]
   })
@@ -207,12 +256,15 @@ const updateCharts = () => {
     series: [{ data: [{ value: formatValue(device.value.memory) }] }]
   })
 
-  networkChart?.setOption({
-    series: [
-      { data: [formatValue(device.value.networkIo[0])] },
-      { data: [formatValue(device.value.networkIo[1])] }
-    ]
-  })
+  // 确保 networkIo 存在
+  if (device.value.networkIo) {
+    networkChart?.setOption({
+      series: [
+        { data: [formatValue(device.value.networkIo[0])] },
+        { data: [formatValue(device.value.networkIo[1])] }
+      ]
+    })
+  }
 }
 
 const handleDeviceUpdate = (message: WebSocketMessage) => {
@@ -221,9 +273,14 @@ const handleDeviceUpdate = (message: WebSocketMessage) => {
     return;
   }
   
-  // 验证设备ID匹配，确保比较的是相同类型
-  if (message.data?.id !== deviceId) {
-    console.log('跳过不相关设备的消息，期望ID:', deviceId, '收到ID:', message.data?.id);
+  console.log('接收到消息:', message.type, '消息数据结构:', JSON.stringify(message));
+  
+  // 尝试从不同可能的位置获取设备ID
+  const messageId = message.data?.id
+  
+  // 将两者都转为字符串进行比较，避免类型不匹配问题
+  if (String(messageId) !== String(deviceId)) {
+    console.log('跳过不相关设备的消息，期望ID:', deviceId, '收到ID:', messageId);
     return;
   }
   
@@ -233,17 +290,18 @@ const handleDeviceUpdate = (message: WebSocketMessage) => {
     return;
   }
   
-  console.log('接收到设备更新数据:', message.type, message.data);
-  
   // 更新设备数据
   device.value = { 
     ...device.value, 
-    ...message.data,
-    // Ensure network data structure is updated from networkIo
-    network: message.data.networkIo ? 
-      { in: message.data.networkIo[0], out: message.data.networkIo[1] } : 
-      device.value.networkIo
+    ...message.data
   };
+
+  console.log('更新后的设备数据:', device.value);
+  // 处理网络数据
+  parseNetworkData(device.value);
+  
+  // 处理任务数据
+  parseTasks(device.value);
   
   // 更新图表
   updateCharts();
@@ -434,6 +492,9 @@ const getGroupLabel = (group: string) => {
             <el-descriptions-item label="运行时间">
               {{ device?.uptime }}
             </el-descriptions-item>
+            <el-descriptions-item label="最后在线">
+              {{ device?.lastSeen }}
+            </el-descriptions-item>
           </el-descriptions>
         </el-card>
       </el-col>
@@ -493,33 +554,14 @@ const getGroupLabel = (group: string) => {
           <template #header>
             <div class="card-header">
               <span>运行任务</span>
-              <span class="task-count">{{ device?.tasks?.length || 0 }} 个任务</span>
+              <span class="task-count">{{ device?.parsedTasks?.length || 0 }} 个任务</span>
             </div>
           </template>
           
-          <el-table :data="device?.tasks || []" style="width: 100%">
-            <el-table-column prop="name" label="任务名称" />
-            <el-table-column prop="cpu" label="CPU 使用率">
+          <el-table :data="device?.parsedTasks || []" style="width: 100%">
+            <el-table-column label="任务名称">
               <template #default="{ row }">
-                <el-progress 
-                  :percentage="formatValue(row.cpu)"
-                  :status="row.cpu > 80 ? 'exception' : row.cpu > 60 ? 'warning' : 'success'"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column prop="memory" label="内存使用率">
-              <template #default="{ row }">
-                <el-progress 
-                  :percentage="formatValue(row.memory)"
-                  :status="row.memory > 80 ? 'exception' : row.memory > 60 ? 'warning' : 'success'"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" label="状态">
-              <template #default="{ row }">
-                <el-tag :type="getTaskStatusType(row.status)" size="small">
-                  {{ getTaskStatusLabel(row.status) }}
-                </el-tag>
+                {{ row }}
               </template>
             </el-table-column>
           </el-table>

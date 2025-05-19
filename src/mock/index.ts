@@ -400,13 +400,13 @@ Mock.mock('/api/resource/optimize', 'post', () => {
 })
 
 // 添加设备
-Mock.mock('/api/devices/add', 'post', (options: any) => {
+Mock.mock('/api/devices/deploy', 'post', (options: any) => {
   try {
     const params = JSON.parse(options.body) as AddDeviceRequest
     console.log('Mock新增设备:', params)
     
     // 参数验证
-    if (!params.name || !params.ip) {
+    if (!params.deviceName || !params.ip) {
       return {
         code: 400,
         data: null,
